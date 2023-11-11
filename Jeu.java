@@ -9,44 +9,79 @@ public class Jeu
 {
     private final List<Departement> departements = new ArrayList<>();
     private final List<Departement> departementsATrouver = new ArrayList<>();
+    private final List<Departement> departementsNonTrouves = new ArrayList<>();
+
+    private int limite;
 
     void jouer() throws FileNotFoundException {
-        chargerDepartements();
 
         System.out.println("JEU DEPARTEMENTS");
         System.out.println("But : Trouver le département depuis son numéro.");
         System.out.println("--------------------");
         System.out.println(" ");
 
+
+        System.out.println("Jusqu'à quel numéro (inclus) aller ?");
+        Scanner input = new Scanner(System.in);
+        limite = Integer.parseInt(input.nextLine());
+
+
+        chargerDepartements();
         lancerUneManche();
     }
 
-    private void lancerUneManche()
-    {
-        Departement vDepartement = getRandomDepartement();
-
-        System.out.print(vDepartement.getNumero() + " : ");
-
-        Scanner input = new Scanner(System.in);
-        String valeurDonnee = input.nextLine();
-
-        if(valeurDonnee.equals("STOP"))
+    private void lancerUneManche() throws FileNotFoundException {
+        if(departementsATrouver.isEmpty())
         {
-            System.exit(0);
-        }
-        else
-        {
-            if(isProche(valeurDonnee,vDepartement))
+            System.out.println("FINI !");
+            int vScore = departements.size() - departementsNonTrouves.size();
+            System.out.println("Score : " +  vScore + " / " + departements.size());
+
+            if(vScore <  departements.size()) {
+                System.out.println("Départements non trouvés du premier coup : ");
+                for (Departement departementsNonTrouve : departementsNonTrouves) {
+                    System.out.println(departementsNonTrouve.getNumero() + " - " + departementsNonTrouve.getNom());
+                }
+            }
+
+
+            System.out.println("Recommencer (y/n) ?");
+            Scanner input = new Scanner(System.in);
+            if(input.next().equals("y"))
             {
-                System.out.println("OK !");
-                departementsATrouver.remove(vDepartement);
+                departements.clear();
+                departementsATrouver.clear();
+                departementsNonTrouves.clear();
+                jouer();
             }
             else
             {
-                System.out.println("Non, c'est : " + vDepartement.getNom());
+                System.exit(0);
             }
-            System.out.println(" ");
-            lancerUneManche();
+        }
+        else {
+            Departement vDepartement = getRandomDepartement();
+
+            System.out.print(vDepartement.getNumero() + " : ");
+
+            Scanner input = new Scanner(System.in);
+            String valeurDonnee = input.nextLine();
+
+            if (valeurDonnee.equals("stop")) {
+                System.exit(0);
+            } else {
+                if (isProche(valeurDonnee, vDepartement)) {
+                    System.out.println("OK ! " + vDepartement.getNom());
+                    departementsATrouver.remove(vDepartement);
+                } else {
+                    System.out.println("Non, c'est : " + vDepartement.getNom());
+                    if (!departementsNonTrouves.contains(vDepartement)) {
+                        departementsNonTrouves.add(vDepartement);
+                    }
+                }
+                System.out.println(" ");
+                lancerUneManche();
+            }
         }
     }
 
@@ -56,9 +91,22 @@ public class Jeu
         {
             while (scanner.hasNextLine())
             {
-                departements.add(getRecordFromLine(scanner.nextLine()));
+                Departement vDep = getRecordFromLine(scanner.nextLine());
+
+                //tant pis pour la corse
+                if(vDep.getNumero().equals("2A") || vDep.getNumero().equals("2B") || Integer.parseInt(vDep.getNumero()) <= limite)
+                {
+                    departements.add(vDep);
+                }
+                else
+                {
+                    System.out.println("Ok , on ne fait pas le " + (limite + 1) + " qui est : " + vDep.getNom());
+                    System.out.println(" ");
+                    break;
+                }
             }
         }
+        departementsATrouver.addAll(departements);
     }
 
     private Departement getRecordFromLine(String line)
@@ -73,12 +121,7 @@ public class Jeu
         return vDep;
     }
 
-    private Departement getRandomDepartement()
-    {
-        if(departementsATrouver.isEmpty())
-        {
-            departementsATrouver.addAll(departements);
-        }
+    private Departement getRandomDepartement(){
         return departementsATrouver.get(new Random().nextInt(departementsATrouver.size()));
     }
 
